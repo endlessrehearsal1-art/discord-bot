@@ -81,7 +81,7 @@ class InstructionView(discord.ui.View):
         embed = discord.Embed(
             title="📜 How To Invite Friends",
             description="Follow the steps in the image below to invite your friends!\n\nIf you need further help, DM <@{}> {}.".format(OWNER_ID, VERIFIED_EMOJI),
-            color=0xE67E22
+            color=0x00B06B # CHANGED TO GREEN
         )
         
         if INSTRUCTION_IMAGE_URL and INSTRUCTION_IMAGE_URL != "PASTE_YOUR_IMAGE_LINK_HERE":
@@ -155,7 +155,7 @@ async def on_member_join(member):
         dm_embed = discord.Embed(
             title="Want Robux? 🤑",
             description="Well look no further! If you rack up invites, you will get Robux!",
-            color=0xE67E22
+            color=0x00B06B # CHANGED TO GREEN
         )
         if BANNER_URL:
             dm_embed.set_thumbnail(url=BANNER_URL)
@@ -211,7 +211,7 @@ async def send_claim_embed():
 
     embed = discord.Embed(
         description=f"## {VERIFIED_EMOJI} Someone just claimed {ROBUX_EMOJI} **{current_prize:,}** Robux\n\nA user has just received selected {ROBUX_EMOJI} **{current_prize:,}** Robux! What are you waiting for? **You only need 3 invites..**",
-        color=0xE67E22 
+        color=0x00B06B # CHANGED TO GREEN
     )
     embed.set_footer(text="-- Partnering with Roblox 20 The Hunt --")
     if BANNER_URL:
@@ -252,7 +252,7 @@ async def gstart(interaction: discord.Interaction, time: str, prize: str):
     embed = discord.Embed(
         title=f"🎉 GIVEAWAY: {prize} 🎉",
         description=f"React with the button below to enter!\n\n**Ends in:** {time}",
-        color=0xE67E22
+        color=0x00B06B # CHANGED TO GREEN
     )
     embed.set_footer(text="Good luck to everyone!")
     
@@ -295,7 +295,7 @@ async def gend(interaction: discord.Interaction, message_id: str, winner: discor
     embed = discord.Embed(
         title=f"🎉 GIVEAWAY ENDED: {prize} 🎉",
         description=f"The winner is {winning_user.mention}! Congratulations!",
-        color=0xE67E22
+        color=0x00B06B # CHANGED TO GREEN
     )
     
     await channel.send(embed=embed)
@@ -312,7 +312,7 @@ async def leaderboard(interaction: discord.Interaction):
 
     sorted_users = sorted(data.items(), key=lambda x: x[1], reverse=True)[:5]
     
-    embed = discord.Embed(title="🏆 Invite Leaderboard 🏆", description="Top 5 users with the most invites!", color=0xE67E22)
+    embed = discord.Embed(title="🏆 Invite Leaderboard 🏆", description="Top 5 users with the most invites!", color=0x00B06B) # CHANGED TO GREEN
     medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
     
     for i, (user_id, count) in enumerate(sorted_users):
@@ -354,7 +354,7 @@ async def instructions(interaction: discord.Interaction):
             "Please click the button below to view a step-by-step visual guide on how to invite your friends to the server.\n\n"
             f"If you have any questions, feel free to DM <@{OWNER_ID}> {VERIFIED_EMOJI}!"
         ),
-        color=0xE67E22
+        color=0x00B06B # CHANGED TO GREEN
     )
     embed.set_footer(text="-- Partnering with Roblox 20 The Hunt --")
     
@@ -386,7 +386,7 @@ async def event_prizes(interaction: discord.Interaction):
 
     embed = discord.Embed(
         description=description_text,
-        color=0xE67E22
+        color=0x00B06B # CHANGED TO GREEN
     )
 
     embed.set_footer(text="-- Partnering with Roblox 20 The Hunt --")
@@ -411,14 +411,14 @@ async def purge(interaction: discord.Interaction, amount: int):
     await interaction.followup.send(f"🧹 Successfully deleted {len(deleted)} messages.", ephemeral=True)
 
 @bot.tree.command(name="embed", description="Create a custom embed.")
-@app_commands.describe(title="The title of the embed", description="The main text of the embed", color="Hex color code (e.g., FF0000)")
+@app_commands.describe(title="The title of the embed", description="The main text of the embed", color="Hex color code (e.g., 00B06B)")
 @app_commands.default_permissions(administrator=True)
 @is_owner()
-async def custom_embed(interaction: discord.Interaction, title: str, description: str, color: str = "008000"):
+async def custom_embed(interaction: discord.Interaction, title: str, description: str, color: str = "00B06B"):
     try:
         color_int = int(color.replace("#", ""), 16)
     except ValueError:
-        await interaction.response.send_message("❌ Invalid hex color code! Use something like `FF0000`.", ephemeral=True)
+        await interaction.response.send_message("❌ Invalid hex color code! Use something like `00B06B`.", ephemeral=True)
         return
     embed = discord.Embed(title=title, description=description, color=color_int)
     embed.set_footer(text="Partnering with Roblox 20")
@@ -442,7 +442,7 @@ async def ping(interaction: discord.Interaction):
 @app_commands.default_permissions(administrator=True)
 @is_owner()
 async def serverinfo(interaction: discord.Interaction):
-    embed = discord.Embed(title=f"{interaction.guild.name} Info", color=0xE67E22)
+    embed = discord.Embed(title=f"{interaction.guild.name} Info", color=0x00B06B) # CHANGED TO GREEN
     embed.add_field(name="Owner", value=interaction.guild.owner.mention)
     embed.add_field(name="Members", value=interaction.guild.member_count)
     embed.add_field(name="Created At", value=interaction.guild.created_at.strftime("%b %d, %Y"))
@@ -456,7 +456,7 @@ async def serverinfo(interaction: discord.Interaction):
 @is_owner()
 async def userinfo(interaction: discord.Interaction, member: discord.Member = None):
     member = member or interaction.user
-    embed = discord.Embed(title=f"{member.name}'s Info", color=0xE67E22)
+    embed = discord.Embed(title=f"{member.name}'s Info", color=0x00B06B) # CHANGED TO GREEN
     embed.add_field(name="ID", value=member.id)
     embed.add_field(name="Joined Server", value=member.joined_at.strftime("%b %d, %Y"))
     embed.add_field(name="Account Created", value=member.created_at.strftime("%b %d, %Y"))
@@ -469,7 +469,7 @@ async def userinfo(interaction: discord.Interaction, member: discord.Member = No
 @is_owner()
 async def avatar(interaction: discord.Interaction, member: discord.Member = None):
     member = member or interaction.user
-    embed = discord.Embed(title=f"{member.name}'s Avatar", color=0xE67E22)
+    embed = discord.Embed(title=f"{member.name}'s Avatar", color=0x00B06B) # CHANGED TO GREEN
     embed.set_image(url=member.display_avatar.url)
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
