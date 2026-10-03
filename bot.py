@@ -20,11 +20,16 @@ INVITE_TRACKER_CHANNEL_ID = 1555309558996402296
 VERIFIED_EMOJI = "<:verified:1555745860413956186>"
 ROBUX_EMOJI = "<:robux2:1556008672709181571>"
 
+# New Custom Emojis for Event Prizes
+ONE_EMOJI = "<:one:1556013174032171008>"
+TWO_EMOJI = "<:two:1556013217292099634>"
+THREE_EMOJI = "<:three:1556013266315247667>"
+
 # Images
 BANNER_URL = "https://media.discordapp.net/attachments/1555309538641580103/1555760645608181800/image.jpg?backend=b2&ex=6ac1b282&is=6ac06102&hm=278e4ce0520b519d442da9266cc7733aedbb5cddbe2bd2265295060c4eaafa19&=&format=webp"
 INSTRUCTION_IMAGE_URL = "https://cdn.discordapp.com/attachments/1555309538641580103/1555799290633523280/427930eb-5521-4182-a01e-2e663c380e2a.png?backend=b2&ex=6ac1d680&is=6ac08500&hm=d0a32675ea757addada072028ccb159e48c7e3bc249eecde187405232aef393c" 
 
-# New Green Color (Vibrant Green)
+# New Green Color
 NEW_GREEN = 0x00C853
 
 # --- DATA SETUP ---
@@ -50,7 +55,7 @@ intents.members = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 bot.invites = {} 
 bot.active_giveaways = {}
-loop_active = False 
+current_prize_index = 0
 
 # --- OWNER CHECK ---
 def is_owner():
@@ -209,12 +214,16 @@ async def on_member_join(member):
 @tasks.loop(seconds=55)
 async def send_claim_embed():
     global current_prize_index
+    print("[DEBUG] Attempting to send claim embed...") # DEBUG LINE
+    
     PRIZE_TIERS = [1000, 2500, 5000, 7500, 10000, 15000, 20000]
     current_prize = PRIZE_TIERS[current_prize_index]
     current_prize_index = (current_prize_index + 1) % len(PRIZE_TIERS)
     
     channel = bot.get_channel(TARGET_CHANNEL_ID)
-    if channel is None: return
+    if channel is None: 
+        print(f"[ERROR] Could not find channel {TARGET_CHANNEL_ID}")
+        return
 
     embed = discord.Embed(
         description=f"## {VERIFIED_EMOJI} Someone just claimed {ROBUX_EMOJI} **{current_prize:,}** Robux\n\nA user has just received selected {ROBUX_EMOJI} **{current_prize:,}** Robux! What are you waiting for? **You only need 3 invites..**",
@@ -225,8 +234,9 @@ async def send_claim_embed():
 
     try:
         await channel.send(embed=embed, view=ClaimView())
+        print("[DEBUG] Claim embed sent successfully!")
     except Exception as e:
-        print(f"Error sending message: {e}")
+        print(f"[ERROR] Failed to send claim embed: {e}")
 
 # --- SLASH COMMANDS ---
 
@@ -234,21 +244,18 @@ async def send_claim_embed():
 @app_commands.default_permissions(administrator=True)
 @is_owner()
 async def start_loop(interaction: discord.Interaction):
-    global loop_active
-    if loop_active:
-        send_claim_embed.cancel()
-    send_claim_embed.start()
-    loop_active = True
+    if send_claim_embed.is_running():
+        send_claim_embed.restart()
+    else:
+        send_claim_embed.start()
     await interaction.response.send_message("✅ Loop started! Rotating through believable prizes.", ephemeral=True)
 
 @bot.tree.command(name="stop", description="Stops the claim embed loop.")
 @app_commands.default_permissions(administrator=True)
 @is_owner()
 async def stop_loop(interaction: discord.Interaction):
-    global loop_active
-    if loop_active or send_claim_embed.is_running():
+    if send_claim_embed.is_running():
         send_claim_embed.cancel()
-        loop_active = False
         await interaction.response.send_message("🛑 Loop stopped.", ephemeral=True)
     else:
         await interaction.response.send_message("The loop is not currently running.", ephemeral=True)
@@ -272,7 +279,7 @@ async def purge(interaction: discord.Interaction, amount: int):
         await asyncio.sleep(1)
     await interaction.followup.send(f"🧹 Successfully deleted {deleted} messages.", ephemeral=True)
 
-@bot.tree.command(name="purge_all", description="Deletes ALL messages in the channel (up to 1000 at a time).")
+@bot.tree.command(name="purge_all", description="Deletes ALL messages in the channel.")
 @app_commands.default_permissions(administrator=True)
 @is_owner()
 async def purge_all(interaction: discord.Interaction):
@@ -355,7 +362,7 @@ async def gend(interaction: discord.Interaction, message_id: str, winner: discor
     save_data(GIVEAWAY_DB, bot.active_giveaways)
     await interaction.response.send_message(f"✅ Giveaway ended. Winner: {winning_user.mention}", ephemeral=True)
 
-# --- NEW MODERATION & UTILITY COMMANDS ---
+# --- MODERATION & UTILITY COMMANDS ---
 @bot.tree.command(name="kick", description="Kicks a member from the server.")
 @app_commands.default_permissions(kick_members=True)
 @is_owner()
@@ -374,7 +381,6 @@ async def ban(interaction: discord.Interaction, member: discord.Member, reason: 
 @app_commands.default_permissions(moderate_members=True)
 @is_owner()
 async def timeout(interaction: discord.Interaction, member: discord.Member, duration: int, reason: str = "No reason provided"):
-    # Duration is in minutes
     from datetime import timedelta
     await member.timeout(timedelta(minutes=duration), reason=reason)
     await interaction.response.send_message(f"🔇 Timed out {member.mention} for {duration} minutes. Reason: {reason}", ephemeral=True)
@@ -513,9 +519,9 @@ async def instructions(interaction: discord.Interaction):
 @is_owner()
 async def event_prizes(interaction: discord.Interaction):
     description_text = (
-        "**1️⃣ Get friends to invite!**\n"
-        "**2️⃣ Get 3 invites to claim prize!**\n"
-        "**3️⃣ __DM me to claim!__**\n\n"
+        f"**{ONE_EMOJI} Get friends to invite!**\n"
+        f"**{TWO_EMOJI} Get 3 invites to claim prize!**\n"
+        f"**{THREE_EMOJI} __DM me to claim!__**\n\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
         "Invite your friends to earn massive rewards!\n"
         f"To claim, **DM __<@{OWNER_ID}> {VERIFIED_EMOJI}__** with a **screenshot** of your invites.\n\n"
