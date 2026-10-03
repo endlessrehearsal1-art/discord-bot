@@ -14,7 +14,7 @@ OWNER_ID = 1551365165629575239
 TARGET_CHANNEL_ID = 1555309550767317153
 CHECKOUT_CHANNEL_ID = 1555309564805513297
 TUTORIAL_CHANNEL_ID = 1555309564805513297 
-INVITE_TRACKER_CHANNEL_ID = 1555309558996402296 
+INVITE_TRACKER_CHANNEL_ID = 1555309558996402296 # Your specific channel
 
 # Custom Emojis
 VERIFIED_EMOJI = "<:verified:1555745860413956186>"
@@ -48,7 +48,7 @@ def save_data(filename, data):
 intents = discord.Intents.default()
 intents.message_content = True 
 intents.guilds = True
-intents.members = True 
+intents.members = True # This is critical
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 bot.invites = {} 
@@ -69,7 +69,6 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
         print(f"Error: {error}")
 
 # --- BUTTONS ---
-
 class InstructionView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -81,12 +80,10 @@ class InstructionView(discord.ui.View):
             description=f"Follow the steps in the image below to invite your friends!\n\nIf you need further help, DM <@{OWNER_ID}> {VERIFIED_EMOJI}.",
             color=NEW_GREEN
         )
-        
         if INSTRUCTION_IMAGE_URL and INSTRUCTION_IMAGE_URL != "PASTE_YOUR_IMAGE_LINK_HERE":
             embed.set_image(url=INSTRUCTION_IMAGE_URL)
         else:
             embed.description = "⚠️ **Image not set!** Please tell the owner to update the image URL in the code."
-            
         embed.set_footer(text="TrickOrBux • Discord Mobile")
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
@@ -100,7 +97,6 @@ class GiveawayView(discord.ui.View):
         if msg_id not in bot.active_giveaways:
             await interaction.response.send_message("❌ This giveaway has ended!", ephemeral=True)
             return
-        
         entries = bot.active_giveaways[msg_id]["entries"]
         if interaction.user.id in entries:
             await interaction.response.send_message("❌ You have already entered this giveaway!", ephemeral=True)
@@ -112,20 +108,12 @@ class GiveawayView(discord.ui.View):
 class EventPrizesView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
-        self.add_item(discord.ui.Button(
-            label="How To Invite / Tutorial", 
-            style=discord.ButtonStyle.link, 
-            url="https://discord.com/channels/1555309413135425628/1555309564805513297"
-        ))
+        self.add_item(discord.ui.Button(label="How To Invite / Tutorial", style=discord.ButtonStyle.link, url="https://discord.com/channels/1555309413135425628/1555309564805513297"))
 
 class ClaimView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
-        self.add_item(discord.ui.Button(
-            label="How To Invite", 
-            style=discord.ButtonStyle.link, 
-            url="https://discord.com/channels/1555309413135425628/1555309564805513297"
-        ))
+        self.add_item(discord.ui.Button(label="How To Invite", style=discord.ButtonStyle.link, url="https://discord.com/channels/1555309413135425628/1555309564805513297"))
 
 # --- INVITE TRACKER & DM EVENTS ---
 @bot.event
@@ -139,7 +127,7 @@ async def on_ready():
         try:
             bot.invites[guild.id] = await guild.invites()
         except Exception as e:
-            print(f"Failed to fetch invites for {guild.name}. Error: {e}")
+            print(f"Failed to fetch invites for {guild.name}. Does the bot have 'Manage Server' permission? Error: {e}")
     try:
         synced = await bot.tree.sync()
         print(f"Synced {len(synced)} slash command(s).")
@@ -148,37 +136,43 @@ async def on_ready():
 
 @bot.event
 async def on_member_join(member):
+    print(f"👤 [DEBUG] {member.name} has joined the server!")
     guild = member.guild
     
     # --- DM ON JOIN ---
     try:
-        dm_embed = discord.Embed(
-            title="Want Robux? 🤑",
-            description="Well look no further! If you rack up invites, you will get Robux!",
-            color=NEW_GREEN
-        )
-        if BANNER_URL:
-            dm_embed.set_thumbnail(url=BANNER_URL)
+        dm_embed = discord.Embed(title="Want Robux? 🤑", description="Well look no further! If you rack up invites, you will get Robux!", color=NEW_GREEN)
+        if BANNER_URL: dm_embed.set_thumbnail(url=BANNER_URL)
         await member.send(embed=dm_embed)
+        print(f"📨 [DEBUG] DM sent to {member.name}")
     except discord.Forbidden:
-        pass
+        print(f"❌ [DEBUG] Could not DM {member.name}. They have DMs closed.")
 
     # --- INVITE TRACKER ---
     inviter_id = None
     inviter_name = "Unknown"
     try:
         current_invites = await guild.invites()
-    except:
+        print(f"🔍 [DEBUG] Fetched {len(current_invites)} invites from Discord.")
+    except Exception as e:
+        print(f"❌ [DEBUG] Failed to fetch invites: {e}")
         current_invites = []
 
     for inv in current_invites:
         if inv.uses > bot.invites.get(guild.id, {}).get(inv.code, 0):
             inviter_id = inv.inviter.id
             inviter_name = inv.inviter.mention
+            print(f"🎯 [DEBUG] Found inviter: {inviter_name} using code {inv.code}")
             break
 
     bot.invites[guild.id] = {inv.code: inv.uses for inv in current_invites}
     channel = bot.get_channel(INVITE_TRACKER_CHANNEL_ID)
+
+    if channel is None:
+        print(f"❌ [ERROR] Could not find channel with ID {INVITE_TRACKER_CHANNEL_ID}")
+        return
+
+    print(f"✅ [DEBUG] Found invite tracker channel: #{channel.name}")
 
     if inviter_id:
         data = load_data(INVITE_DB)
@@ -186,27 +180,34 @@ async def on_member_join(member):
         save_data(INVITE_DB, data)
         count = data[str(inviter_id)]
         
-        if channel:
-            embed = discord.Embed(
-                title="🎉 New Member Joined!",
-                description=f"Welcome {member.mention}!\n\n**Invited by:** {inviter_name}\n**Their Total Invites:** `{count}`",
-                color=NEW_GREEN
-            )
-            embed.set_thumbnail(url=member.display_avatar.url)
-            if BANNER_URL: embed.set_image(url=BANNER_URL)
+        embed = discord.Embed(
+            title="🎉 New Member Joined!",
+            description=f"Welcome {member.mention}!\n\n**Invited by:** {inviter_name}\n**Their Total Invites:** `{count}`",
+            color=NEW_GREEN
+        )
+        embed.set_thumbnail(url=member.display_avatar.url)
+        if BANNER_URL: embed.set_image(url=BANNER_URL)
+        
+        try:
             await channel.send(embed=embed)
-            
-            if count == 3:
-                await channel.send(f"🎉 {inviter_name} just hit 3 invites! DM <@{OWNER_ID}> to claim your prize!")
+            print(f"📤 [DEBUG] Successfully sent join message for {member.name}")
+        except Exception as e:
+            print(f"❌ [ERROR] Failed to send join message: {e}")
+
+        if count == 3:
+            await channel.send(f"🎉 {inviter_name} just hit 3 invites! DM <@{OWNER_ID}> to claim your prize!")
     else:
-        if channel:
-            embed = discord.Embed(
-                title="🎉 New Member Joined!",
-                description=f"Welcome {member.mention}!\n\n**Invited by:** Unknown",
-                color=NEW_GREEN
-            )
-            embed.set_thumbnail(url=member.display_avatar.url)
+        embed = discord.Embed(
+            title="🎉 New Member Joined!",
+            description=f"Welcome {member.mention}!\n\n**Invited by:** Unknown",
+            color=NEW_GREEN
+        )
+        embed.set_thumbnail(url=member.display_avatar.url)
+        try:
             await channel.send(embed=embed)
+            print(f"📤 [DEBUG] Successfully sent join message (unknown inviter) for {member.name}")
+        except Exception as e:
+            print(f"❌ [ERROR] Failed to send join message: {e}")
 
 # --- TASK LOOP ---
 @tasks.loop(seconds=55)
@@ -217,8 +218,7 @@ async def send_claim_embed():
     current_prize_index = (current_prize_index + 1) % len(PRIZE_TIERS)
     
     channel = bot.get_channel(TARGET_CHANNEL_ID)
-    if channel is None: 
-        return
+    if channel is None: return
 
     embed = discord.Embed(
         description=f"## {VERIFIED_EMOJI} Someone just claimed {ROBUX_EMOJI} **{current_prize:,}** Robux\n\nA user has just received selected {ROBUX_EMOJI} **{current_prize:,}** Robux! What are you waiting for? **You only need 3 invites..**",
@@ -254,14 +254,12 @@ async def stop_loop(interaction: discord.Interaction):
     else:
         await interaction.response.send_message("The loop is not currently running.", ephemeral=True)
 
-# --- NEW INVITE LINK COMMAND ---
+# --- INVITE LINK COMMAND ---
 @bot.tree.command(name="createinvite", description="Creates a permanent invite link for the current channel.")
 @app_commands.default_permissions(administrator=True)
 @is_owner()
 async def createinvite(interaction: discord.Interaction):
     try:
-        # max_age=0 means the invite never expires
-        # max_uses=0 means unlimited uses
         invite = await interaction.channel.create_invite(max_age=0, max_uses=0, reason=f"Created by {interaction.user}")
         await interaction.response.send_message(f"✅ Successfully created a permanent invite link:\n{invite.url}")
     except discord.Forbidden:
@@ -323,20 +321,11 @@ async def purge_bots(interaction: discord.Interaction, amount: int = 100):
 @app_commands.default_permissions(administrator=True)
 @is_owner()
 async def gstart(interaction: discord.Interaction, time: str, prize: str):
-    embed = discord.Embed(
-        title=f"🎉 GIVEAWAY: {prize} 🎉",
-        description=f"React with the button below to enter!\n\n**Ends in:** {time}",
-        color=NEW_GREEN
-    )
+    embed = discord.Embed(title=f"🎉 GIVEAWAY: {prize} 🎉", description=f"React with the button below to enter!\n\n**Ends in:** {time}", color=NEW_GREEN)
     embed.set_footer(text="Good luck to everyone!")
     await interaction.response.send_message("✅ Giveaway started!", ephemeral=True)
     msg = await interaction.channel.send(embed=embed, view=GiveawayView())
-    
-    bot.active_giveaways[str(msg.id)] = {
-        "prize": prize,
-        "entries": [],
-        "channel_id": interaction.channel.id
-    }
+    bot.active_giveaways[str(msg.id)] = {"prize": prize, "entries": [], "channel_id": interaction.channel.id}
     save_data(GIVEAWAY_DB, bot.active_giveaways)
 
 @bot.tree.command(name="gend", description="Force ends a giveaway and picks a winner.")
@@ -361,11 +350,7 @@ async def gend(interaction: discord.Interaction, message_id: str, winner: discor
     else:
         winning_user = interaction.user 
 
-    embed = discord.Embed(
-        title=f"🎉 GIVEAWAY ENDED: {prize} 🎉",
-        description=f"The winner is {winning_user.mention}! Congratulations!",
-        color=NEW_GREEN
-    )
+    embed = discord.Embed(title=f"🎉 GIVEAWAY ENDED: {prize} 🎉", description=f"The winner is {winning_user.mention}! Congratulations!", color=NEW_GREEN)
     await channel.send(embed=embed)
     del bot.active_giveaways[msg_id]
     save_data(GIVEAWAY_DB, bot.active_giveaways)
@@ -478,7 +463,6 @@ async def leaderboard(interaction: discord.Interaction):
         except:
             name = f"Unknown User ({user_id})"
         embed.add_field(name=f"{medals[i]} {name}", value=f"**{count}** invites", inline=False)
-        
     embed.set_footer(text="Keep inviting to climb the ranks!")
     await interaction.response.send_message(embed=embed)
 
@@ -489,14 +473,9 @@ async def leaderboard(interaction: discord.Interaction):
 async def test_invite(interaction: discord.Interaction, member: discord.Member = None, inviter: discord.Member = None):
     member = member or interaction.user
     inviter = inviter or interaction.user
-    
     channel = bot.get_channel(INVITE_TRACKER_CHANNEL_ID)
     if channel:
-        embed = discord.Embed(
-            title="🎉 New Member Joined!",
-            description=f"Welcome {member.mention}!\n\n**Invited by:** {inviter.mention}\n**Their Total Invites:** `3`",
-            color=NEW_GREEN
-        )
+        embed = discord.Embed(title="🎉 New Member Joined!", description=f"Welcome {member.mention}!\n\n**Invited by:** {inviter.mention}\n**Their Total Invites:** `3`", color=NEW_GREEN)
         embed.set_thumbnail(url=member.display_avatar.url)
         if BANNER_URL: embed.set_image(url=BANNER_URL)
         await channel.send(embed=embed)
@@ -510,15 +489,7 @@ async def test_invite(interaction: discord.Interaction, member: discord.Member =
 @app_commands.default_permissions(administrator=True)
 @is_owner()
 async def instructions(interaction: discord.Interaction):
-    embed = discord.Embed(
-        title="📜 How To Invite Friends",
-        description=(
-            "Want to earn amazing rewards? It's easy!\n\n"
-            "Please click the button below to view a step-by-step visual guide on how to invite your friends to the server.\n\n"
-            f"If you have any questions, feel free to DM <@{OWNER_ID}> {VERIFIED_EMOJI}!"
-        ),
-        color=NEW_GREEN
-    )
+    embed = discord.Embed(title="📜 How To Invite Friends", description="Want to earn amazing rewards? It's easy!\n\nPlease click the button below to view a step-by-step visual guide on how to invite your friends to the server.\n\nIf you have any questions, feel free to DM <@{}> {}!".format(OWNER_ID, VERIFIED_EMOJI), color=NEW_GREEN)
     embed.set_footer(text="-- Partnering with Roblox 20 The Hunt --")
     await interaction.response.send_message("✅ Instructions embed sent!", ephemeral=True)
     await interaction.channel.send(embed=embed, view=InstructionView())
