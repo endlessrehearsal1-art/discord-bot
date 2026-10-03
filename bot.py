@@ -19,8 +19,6 @@ INVITE_TRACKER_CHANNEL_ID = 1555309558996402296
 # Custom Emojis
 VERIFIED_EMOJI = "<:verified:1555745860413956186>"
 ROBUX_EMOJI = "<:robux2:1556008672709181571>"
-
-# New Custom Emojis for Event Prizes
 ONE_EMOJI = "<:one:1556013174032171008>"
 TWO_EMOJI = "<:two:1556013217292099634>"
 THREE_EMOJI = "<:three:1556013266315247667>"
@@ -135,7 +133,7 @@ async def on_ready():
     print(f"Logged in as {bot.user.name} (ID: {bot.user.id})")
     bot.add_view(InstructionView())
     bot.add_view(GiveawayView())
-    bot.active_giveaways = load_data(GIVEAWAY_DB) # Load giveaways on startup
+    bot.active_giveaways = load_data(GIVEAWAY_DB) 
     
     for guild in bot.guilds:
         try:
@@ -214,15 +212,12 @@ async def on_member_join(member):
 @tasks.loop(seconds=55)
 async def send_claim_embed():
     global current_prize_index
-    print("[DEBUG] Attempting to send claim embed...") # DEBUG LINE
-    
     PRIZE_TIERS = [1000, 2500, 5000, 7500, 10000, 15000, 20000]
     current_prize = PRIZE_TIERS[current_prize_index]
     current_prize_index = (current_prize_index + 1) % len(PRIZE_TIERS)
     
     channel = bot.get_channel(TARGET_CHANNEL_ID)
     if channel is None: 
-        print(f"[ERROR] Could not find channel {TARGET_CHANNEL_ID}")
         return
 
     embed = discord.Embed(
@@ -234,7 +229,6 @@ async def send_claim_embed():
 
     try:
         await channel.send(embed=embed, view=ClaimView())
-        print("[DEBUG] Claim embed sent successfully!")
     except Exception as e:
         print(f"[ERROR] Failed to send claim embed: {e}")
 
@@ -259,6 +253,21 @@ async def stop_loop(interaction: discord.Interaction):
         await interaction.response.send_message("🛑 Loop stopped.", ephemeral=True)
     else:
         await interaction.response.send_message("The loop is not currently running.", ephemeral=True)
+
+# --- NEW INVITE LINK COMMAND ---
+@bot.tree.command(name="createinvite", description="Creates a permanent invite link for the current channel.")
+@app_commands.default_permissions(administrator=True)
+@is_owner()
+async def createinvite(interaction: discord.Interaction):
+    try:
+        # max_age=0 means the invite never expires
+        # max_uses=0 means unlimited uses
+        invite = await interaction.channel.create_invite(max_age=0, max_uses=0, reason=f"Created by {interaction.user}")
+        await interaction.response.send_message(f"✅ Successfully created a permanent invite link:\n{invite.url}")
+    except discord.Forbidden:
+        await interaction.response.send_message("❌ I don't have permission to create invites in this channel! Make sure I have the 'Create Invite' permission.", ephemeral=True)
+    except Exception as e:
+        await interaction.response.send_message(f"❌ An error occurred: {e}", ephemeral=True)
 
 # --- ADVANCED PURGE COMMANDS ---
 @bot.tree.command(name="purge", description="Deletes a specified number of messages (Max 1000).")
