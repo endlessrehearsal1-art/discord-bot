@@ -20,7 +20,7 @@ INVITE_TRACKER_CHANNEL_ID = 1555309558996402296
 
 # Custom Emojis provided
 VERIFIED_EMOJI = "<:verified:1555745860413956186>"
-ROBUX_EMOJI = "<:Robux:1555745907977232466>"
+ROBUX_EMOJI = "<:robux2:1556008672709181571>"
 
 # The banner image URL you provided
 BANNER_URL = "https://media.discordapp.net/attachments/1555309538641580103/1555760645608181800/image.jpg?backend=b2&ex=6ac1b282&is=6ac06102&hm=278e4ce0520b519d442da9266cc7733aedbb5cddbe2bd2265295060c4eaafa19&=&format=webp"
@@ -414,7 +414,7 @@ async def purge(interaction: discord.Interaction, amount: int):
 @app_commands.describe(title="The title of the embed", description="The main text of the embed", color="Hex color code (e.g., FF0000)")
 @app_commands.default_permissions(administrator=True)
 @is_owner()
-async def custom_embed(interaction: discord.Interaction, title: str, description: str, color: str = "E67E22"):
+async def custom_embed(interaction: discord.Interaction, title: str, description: str, color: str = "008000"):
     try:
         color_int = int(color.replace("#", ""), 16)
     except ValueError:
